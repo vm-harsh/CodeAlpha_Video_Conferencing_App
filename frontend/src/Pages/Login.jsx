@@ -15,6 +15,8 @@ import { FaFolder, FaGithub } from "react-icons/fa";
 import { AiFillThunderbolt } from "react-icons/ai";
 import {delay, easeIn, motion} from 'motion/react'
 import { BiLogIn } from "react-icons/bi";
+import { signInWithPopup } from 'firebase/auth';
+import { auth, githubProvider, googleProvider } from '../firebase/firebase';
 
 
 
@@ -52,6 +54,42 @@ const Login = () => {
         console.log(response.data);
     }
 
+    const handleGoogleLogin = async () => {
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+
+            const firebaseToken = await result.user.getIdToken();
+
+            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/social-login`,{token:firebaseToken},{withCredentials:true})
+
+            if(response.status === 200){
+                navigate('/home');
+            }
+            
+            console.log(response.data);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
+    const handleGithubLogin = async () => {
+        try {
+            const result = await signInWithPopup(auth, githubProvider);
+
+            const firebaseToken = await result.user.getIdToken();
+
+            const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/social-login`,{token:firebaseToken},{withCredentials:true})
+
+            if(response.status === 200){
+                navigate('/home');
+            }
+            
+            console.log(response.data);
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
 
 
     const containerVariant = {
@@ -80,7 +118,7 @@ const Login = () => {
 
 
   return (
-   <div className='w-full h-screen bg-slate-700 min-w-120'>
+   <div className='w-full h-screen bg-slate-700 min-w-120 lg:overflow-hidden'>
       <div className='flex items-center justify-center h-full w-full'>
         <div className='flex items-center justify-center flex-wrap w-800 h-screen lg:px-20 lg:py-20 lg:flex-col'>
         {/* left section */}
@@ -242,8 +280,8 @@ const Login = () => {
               <p className='w-full flex justify-center border-b border-black/40 text-black/40'><span className='bg-white relative top-2.5 px-4 text'>or continue with</span></p>
             {/* google and github login */}
             <div className='w-full flex items-center justify-center gap-3'>
-              <button className='button text-black/60 border border-black/50 select-none px-4.5 md:px-3'> <span className='text-xl'><FcGoogle /></span> Continue with google</button>
-              <button className='button text-black/60 border border-black/50 select-none px-4.5'md:px-3> <span className='text-xl text-black'><FaGithub /></span> Continue with github</button>
+              <button className='button text-black/60 border border-black/50 select-none px-4.5 md:px-3' onClick={handleGoogleLogin}> <span className='text-xl'><FcGoogle /></span> Continue with google</button>
+              <button className='button text-black/60 border border-black/50 select-none px-4.5'md:px-3 onClick={handleGithubLogin}> <span className='text-xl text-black'><FaGithub /></span> Continue with github</button>
             </div>
 
             {/* login option */}

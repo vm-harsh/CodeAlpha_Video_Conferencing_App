@@ -1,4 +1,6 @@
 const userModel = require('../models/userModel');
+const {getAuth} = require('firebase-admin/auth')
+require('../firebase/firebaseAdmin')
 
 const userSignUp = async (req,res) => {
     const {fullName,email,password} = req.body;
@@ -60,4 +62,56 @@ const userLogOut = async (req,res) => {
     return res.status(200).json({message:"User Logout Successfully"});
 }
 
-module.exports = {userSignUp,userLogIn,userLogOut}
+const socialLogin = async (req,res) => {
+    try {
+        const {token} = req.body;
+
+        const decodedToken = await getAuth().verifyIdToken(token);
+
+        if(!decodedToken) return res.status(400).json({message:"Login failed"});
+
+        const email = decodedToken.email;
+        const provider = decodedToken.firebase.sign_in_provider;
+
+        const user = await userModel.findOne({email});
+        
+        if(user){
+            if(user.provider === "local"){
+                user.provider = provider === "google.com" ? "google" : "github";
+                user.firebaseUID = decodedToken.uid;
+
+                if(!user.profilePic){
+                    user.profilePic = decodedToken.picture
+                }
+                await user.save();
+            }
+            const token = user.generateAuthToken();
+            res.cookie("token",token);
+            return res.status(200).json(user);
+        }
+
+
+
+
+        const newUser = await userModel.create({
+            fullName: decodedToken.name,
+            email: decodedToken.email,
+            profilePic: decodedToken.picture,
+            provider:provider === "google.com" ? "google" : "github",
+            firebaseUID: decodedToken.uid
+        })
+
+        const JWTtoken = newUser.generateAuthToken();
+        res.cookie("token",JWTtoken);
+        return res.status(200).json(newUser);
+
+
+    } catch (error) {
+        console.log(error);
+        res.status(401).json({
+            message:"Invalid Firebase Token"
+        });
+    }
+}
+
+module.exports = {userSignUp,userLogIn,userLogOut,socialLogin}

@@ -46,6 +46,15 @@ const userSchema = new mongoose.Schema({
     contacts:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
+    },
+    provider:{
+        type:String,
+        enum:["local","google","github"],
+        default:"local"
+    },
+    firebaseUID:{
+        type:String,
+        default:null
     }
 
 },{timestamps:true});
