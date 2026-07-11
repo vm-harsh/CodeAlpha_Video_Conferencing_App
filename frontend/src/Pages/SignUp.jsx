@@ -274,12 +274,12 @@ const SignUp = () => {
               <p className='w-full flex justify-center border-b'><span className='bg-white relative top-2.5 px-4 text-lg'>or</span></p>
             {/* google and github login */}
             <div className='w-full flex items-center justify-center gap-3'>
-              <button className='button text-black border border-black/50 select-none px-4.5 md:px-3'> <span className='text-xl'><FcGoogle /></span> Continue with google</button>
-              <button className='button text-black border border-black/50 select-none px-4.5'md:px-3> <span className='text-xl'><FaGithub /></span> Continue with github</button>
+              <button className='button text-black/60 border border-black/50 select-none px-4.5 md:px-3'> <span className='text-xl'><FcGoogle /></span> Continue with google</button>
+              <button className='button text-black/60 border border-black/50 select-none px-4.5'md:px-3> <span className='text-xl text-black'><FaGithub /></span> Continue with github</button>
             </div>
 
             {/* login option */}
-            <p className='w-full flex justify-center gap-1 text-black/60 text-sm cursor-pointer'>Already have an account? <span className='text-primary'>Login</span></p>
+            <p className='w-full flex justify-center gap-1 text-black/60 text-sm cursor-pointer' onClick={()=>navigate('/login')}>Already have an account? <span className='text-primary font-semibold'>Login</span></p>
             </div>
           </div>
         </motion.div>
