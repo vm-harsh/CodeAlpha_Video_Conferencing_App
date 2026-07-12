@@ -17,6 +17,8 @@ import {delay, easeIn, motion} from 'motion/react'
 import { BiLogIn } from "react-icons/bi";
 import { signInWithPopup } from 'firebase/auth';
 import { auth, githubProvider, googleProvider } from '../firebase/firebase';
+import { useDispatch } from 'react-redux';
+import { setUser } from '../redux/slices/authSlice';
 
 
 
@@ -27,6 +29,7 @@ import { auth, githubProvider, googleProvider } from '../firebase/firebase';
 const Login = () => {
 
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const [formData,setFormData] = useState({
         email:"",
@@ -48,6 +51,7 @@ const Login = () => {
         const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/login`,formData,{withCredentials:true})
 
         if(response.status === 200){
+            dispatch(setUser(response.data.user))
             navigate('/home');
         }
 
@@ -63,6 +67,7 @@ const Login = () => {
             const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/social-login`,{token:firebaseToken},{withCredentials:true})
 
             if(response.status === 200){
+                dispatch(setUser(response.data))
                 navigate('/home');
             }
             
@@ -81,6 +86,7 @@ const Login = () => {
             const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/auth/social-login`,{token:firebaseToken},{withCredentials:true})
 
             if(response.status === 200){
+                dispatch(setUser(response.data))
                 navigate('/home');
             }
             
@@ -281,7 +287,7 @@ const Login = () => {
             {/* google and github login */}
             <div className='w-full flex items-center justify-center gap-3'>
               <button className='button text-black/60 border border-black/50 select-none px-4.5 md:px-3' onClick={handleGoogleLogin}> <span className='text-xl'><FcGoogle /></span> Continue with google</button>
-              <button className='button text-black/60 border border-black/50 select-none px-4.5'md:px-3 onClick={handleGithubLogin}> <span className='text-xl text-black'><FaGithub /></span> Continue with github</button>
+              <button className='button text-black/60 border border-black/50 select-none px-4.5 md:px-3' onClick={handleGithubLogin}> <span className='text-xl text-black'><FaGithub /></span> Continue with github</button>
             </div>
 
             {/* login option */}
