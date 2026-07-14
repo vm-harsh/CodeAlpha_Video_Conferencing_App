@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Navbar from '../components/Navbar'
 import Sidebar from '../components/Sidebar'
 import { useSelector } from 'react-redux'
@@ -6,14 +6,40 @@ import { BsFillCameraVideoFill } from 'react-icons/bs'
 import { LuUsers } from "react-icons/lu";
 import { IoMdAdd } from 'react-icons/io'
 import { FaArrowRight, FaDesktop } from "react-icons/fa";
+import CreateMeetingComponent from '../components/CreateMeetingComponent'
+import { joinMeeting } from '../api/meetingApi'
+import { useNavigate } from 'react-router-dom'
 
 
 const Home = () => {
+  const navigate = useNavigate();
   const {user} = useSelector((state)=>state.auth)
+  const [isCreateMeetingPanelOpen, setIsCreateMeetingPanelOpen] = useState(false);
+  const [meetingId, setMeetingId] = useState("");
+
+  const handleJoinMeeting = async () => {
+    try {
+      if(meetingId.trim().length !== 6){
+        console.log("Meeting Id must be 6 char long");
+        return;
+      }
+      console.log(meetingId)
+      const data = await joinMeeting(meetingId);
+
+      console.log(data);
+
+      navigate(`/meeting/${data.meeting.meetingId}`);
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   return (
-    <div className='bg-slate-800 w-full h-screen min-w-100'>
-      <Navbar/>
+    <div className='bg-slate-800 w-full h-screen min-w-120'>
+      <Navbar setIsCreateMeetingPanelOpen={setIsCreateMeetingPanelOpen}/>
       <Sidebar/>
+      {isCreateMeetingPanelOpen && <CreateMeetingComponent setIsCreateMeetingPanelOpen={setIsCreateMeetingPanelOpen}/>}
       <div className='lg:pl-90 pl-10 py-10 pr-10 flex flex-col gap-5 w-full'> 
         {/* Welcome back Message */}
         <div className='text-white flex flex-col gap-2'>
@@ -34,7 +60,7 @@ const Home = () => {
               <h4 >Start an instant meeting</h4>
             </div>
             </div>
-            <button className='button bg-white text-primary font-semibold w-[80%] self-center'> <span className='text-xl'><IoMdAdd /></span> Create Meeting</button>
+            <button className='button bg-white text-primary font-semibold w-[80%] self-center' onClick={()=>setIsCreateMeetingPanelOpen(true)}> <span className='text-xl'><IoMdAdd /></span> Create Meeting</button>
           </div>
 
           {/* Join a meeting button */}
@@ -49,8 +75,8 @@ const Home = () => {
             </div>
             </div>
             <div className='flex gap-2'>
-              <input type='text' placeholder='Enter meeting code' className='w-full border border-white/20 outline-none rounded pl-4 bg-nav-bg placeholder:text-white/70'/>
-              <button className='button bg-primary font-semibold py-3'> <FaArrowRight/></button>
+              <input type='text' placeholder='Enter meeting code' className='w-full border border-white/20 outline-none rounded pl-4 bg-nav-bg placeholder:text-white/70' value={meetingId} onChange={(e)=>setMeetingId(e.target.value)}/>
+              <button className='button bg-primary font-semibold py-3' onClick={handleJoinMeeting}> <FaArrowRight/></button>
             </div>
           </div>
 

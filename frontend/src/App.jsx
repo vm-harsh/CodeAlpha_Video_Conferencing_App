@@ -5,6 +5,7 @@ import Profile from './Pages/Profile'
 import Home from './Pages/Home'
 import PublicLayout from './layout/PublicLayout'
 import ProtectedLayout from './layout/ProtectedLayout'
+import MeetingRoom from './Pages/MeetingRoom'
 
 const App = () => {
 
@@ -21,6 +22,7 @@ const App = () => {
       <Route element={<ProtectedLayout/>}>
         <Route path='/home' element={<Home/>}/>
         <Route path='/profile' element={<Profile/>}/>
+        <Route path='meeting/:meetingId' element={<MeetingRoom/>}/>
       </Route>
     </Routes>
   )

@@ -5,7 +5,7 @@ import { IoMdNotificationsOutline } from "react-icons/io";
 import { FcCamera } from "react-icons/fc";
 
 
-const Navbar = () => {
+const Navbar = ({setIsCreateMeetingPanelOpen}) => {
   return (
     <div className='relative w-full py-4 bg-nav-bg min-w-100 z-20 border-b-2 border-white/30'>
         <div className='w-full h-full flex justify-between items-center px-5'>
@@ -26,7 +26,7 @@ const Navbar = () => {
             {/* Meeting button and profile button */}
             <div className='lg:flex items-center justify-center gap-8 hidden'>
                 {/* button */}
-                <button className='button bg-primary'> <span className='text-xl'><IoMdAdd /></span> Create Meeting</button>
+                <button className='button bg-primary' onClick={()=>setIsCreateMeetingPanelOpen(true)}> <span className='text-xl'><IoMdAdd /></span> Create Meeting</button>
                 {/* notification icon */}
                 <div className='relative cursor-pointer'>
                     <IoMdNotificationsOutline className='text-3xl text-white' />
