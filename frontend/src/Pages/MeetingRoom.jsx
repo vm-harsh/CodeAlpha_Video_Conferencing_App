@@ -5,13 +5,19 @@ import { FcVideoCall } from 'react-icons/fc'
 import { FiCopy, FiVideo, FiMic, FiSettings, FiMoreVertical, FiLogOut, FiUsers, FiMessageSquare, FiShield, FiChevronUp } from 'react-icons/fi'
 import { BsPeople, BsRecordCircle, BsThreeDotsVertical } from 'react-icons/bs'
 import { MdOutlineScreenShare } from 'react-icons/md'
+import socket from '../services/socket'
+import { useSelector } from 'react-redux'
 
 const MeetingRoom = () => {
 
     const navigate = useNavigate();
     const [data, setData] = useState({})
+    const {user} = useSelector((state) => state.auth);
     const [isCopied, setIsCopied] = useState(false)
     const { meetingId } = useParams()
+    const isHost = data?.host?._id === user._id;
+
+
 
     
     useEffect(()=>{
@@ -19,11 +25,26 @@ const MeetingRoom = () => {
             try {
                 const meetingData = await fetchMeeting(meetingId)
                 setData(meetingData.meeting)
+                socket.emit('join-room', {meetingId, user});
             } catch (error) {
                 console.log(error)
             }
         }
         getCurrentMeeting()
+
+        const handleMeetingEnded = () => {
+            alert("Meeting has been ended by the host");
+            navigate('/home');
+        }
+
+        socket.on("message",(s)=>console.log(s));
+
+        socket.on("meeting-ended", handleMeetingEnded);
+
+        return () => {
+            socket.off("meeting-ended", handleMeetingEnded);
+        }
+
     },[meetingId])
 
     const participantsCount = data?.participants?.length || 0
@@ -66,12 +87,16 @@ const MeetingRoom = () => {
     const handleEndMeeting = async () => {
         try{
             const data = await endMeeting(meetingId);
-            
-            console.log(data);
+            socket.emit("end-meeting",{meetingId});
             navigate('/home');
         }catch(error){
-            console.log(error)
+            console.log(error?.response?.data?.message)
         }
+    }
+
+    const handleLeaveMeeting = () => {
+        socket.emit("leave-room",{meetingId,userName:user.fullName});
+        navigate('/home');
     }
 
     return (
@@ -121,12 +146,22 @@ const MeetingRoom = () => {
                         <button className='inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/8 bg-white/6 text-white/75 transition hover:bg-white/10'>
                             <BsThreeDotsVertical className='text-lg' />
                         </button>
-                        <button className='ml-1 inline-flex h-11 items-center gap-2 rounded-2xl bg-[#d34b48] px-4 text-sm font-medium text-white transition hover:brightness-110' onClick={handleEndMeeting}>
-                            <FiLogOut />
-                            Leave Meeting
-                        </button>
+                        {
+                            isHost ? (
+                                <button onClick={handleEndMeeting} className='ml-1 inline-flex h-11 items-center gap-2 rounded-2xl bg-[#d34b48] px-4 text-sm font-medium text-white transition hover:brightness-110'>
+                                    <FiLogOut />
+                                    End Meeting
+                                </button>
+                            ) : (
+                                <button onClick={handleLeaveMeeting} className='ml-1 inline-flex h-11 items-center gap-2 rounded-2xl bg-[#d34b48] px-4 text-sm font-medium text-white transition hover:brightness-110'>
+                                    <FiLogOut />
+                                    Leave Meeting
+                                </button>
+                            )
+                        }
                     </div>
                 </div>
+
 
                 <div className='grid flex-1 gap-3 p-3 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)]'>
                     <section className='flex min-h-0 flex-col gap-3'>
