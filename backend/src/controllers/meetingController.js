@@ -159,6 +159,37 @@ const endMeeting = async (req,res) => {
    }
 }
 
+const leaveMeeting = async (req,res) => {
+    try{
+        const {meetingId} = req.params;
+        const userId = req.user;
+
+        const meeting = await meetingModel.findOne({meetingId});
+
+        if(!meeting){
+            return res.status(404).json({
+                message:"Meeting not found"
+            });
+        }
+
+        meeting.participants = meeting.participants.filter(participant => !participant.user.equals(userId));
+
+        await meeting.save();
+
+        return res.status(200).json({
+            success:true,
+            message:"Left meeting successfully",
+            meeting
+        })
+
+    }catch(error){
+        console.error(error);
+        return res.status(500).json({
+            message: "Internal Server Error"
+        });
+    }
+}
+
 
 const meetingHistory = async (req,res) => {
     try {
@@ -178,4 +209,4 @@ const meetingHistory = async (req,res) => {
     }
 
 }
-module.exports = {createMeeting,joinMeeting,findMeeting,endMeeting,meetingHistory};
+module.exports = {createMeeting,joinMeeting,findMeeting,endMeeting,leaveMeeting,meetingHistory};

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { endMeeting, fetchMeeting } from '../api/meetingApi'
+import { endMeeting, fetchMeeting, leaveMeeting } from '../api/meetingApi'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FcVideoCall } from 'react-icons/fc'
 import { FiCopy, FiVideo, FiMic, FiSettings, FiMoreVertical, FiLogOut, FiUsers, FiMessageSquare, FiShield, FiChevronUp } from 'react-icons/fi'
@@ -11,12 +11,14 @@ import { useSelector } from 'react-redux'
 const MeetingRoom = () => {
 
     const navigate = useNavigate();
-    const [data, setData] = useState({})
     const {user} = useSelector((state) => state.auth);
-    const [isCopied, setIsCopied] = useState(false)
     const { meetingId } = useParams()
+    const [data, setData] = useState({})
+    const [isCopied, setIsCopied] = useState(false)
+    const [participants, setParticipants] = useState([])
+    const [message, setMessage] = useState('')
     const isHost = data?.host?._id === user._id;
-
+    const participantsCount = data?.participants?.length || 0
 
 
     
@@ -32,41 +34,49 @@ const MeetingRoom = () => {
         }
         getCurrentMeeting()
 
+        
+
         const handleMeetingEnded = () => {
             alert("Meeting has been ended by the host");
             navigate('/home');
         }
 
-        socket.on("message",(s)=>console.log(s));
+        socket.on("message",(msg)=>{
+            setMessage(msg);
+            setTimeout(()=>setMessage(''),3000)
+        })
 
         socket.on("meeting-ended", handleMeetingEnded);
 
+        socket.on("participants-updated", ({participants}) => {
+            setParticipants(participants);
+        });
+
         return () => {
+            socket.off("message",(msg)=>{
+                setMessage(msg);
+                setTimeout(()=>setMessage(''),3000)
+            });
             socket.off("meeting-ended", handleMeetingEnded);
+            socket.off("participants-updated", (updatedParticipants) => {
+                setParticipants(updatedParticipants);
+            });
         }
 
     },[meetingId])
 
-    const participantsCount = data?.participants?.length || 0
-    const roomParticipants = participantsCount > 0
-        ? data.participants.map((participant, index) => ({
-            id: participant?.user?._id || index,
-            name: participant?.user?.fullName ,
-            initials: (participant?.user?.fullName)
-                .split(' ')
-                .map((word) => word[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase(),
-            accent: ['#7c7cff', '#6bbf59', '#f3b84b', '#ef6f6c'][index % 4],
-            muted: index === 2,
-            host: index === 0,
-        }))
-        : [
-            { id: 'you', name: 'Harsh Verma (You)', initials: 'HV', accent: '#7c7cff', muted: false, host: true },
-            { id: 'aman', name: 'Aman Mishra', initials: 'AM', accent: '#6bbf59', muted: false, host: false },
-            { id: 'rahul', name: 'Rahul Kumar', initials: 'RK', accent: '#f3b84b', muted: true, host: false },
-        ]
+
+    const roomParticipants = participantsCount > 0 ? participants.map((participant,index)=>{
+        const initials = participant.user.fullName.split(' ').map((word) => word[0]).join('').toUpperCase().slice(0, 2);
+        return {
+            id: index,
+            name: participant.user.fullName,
+            initials,
+            accent: `hsl(${Math.floor(Math.random() * 360)}, 70%, 50%)`,
+            host: participant.user._id === data?.host?._id,
+            muted: true
+        }
+    }): [];
 
     const chatMessages = [
         { id: 1, author: 'Aman Mishra', time: '10:30 AM', text: 'Hello everyone 👋', mine: false, accent: '#6bbf59' },
@@ -94,9 +104,15 @@ const MeetingRoom = () => {
         }
     }
 
-    const handleLeaveMeeting = () => {
-        socket.emit("leave-room",{meetingId,userName:user.fullName});
-        navigate('/home');
+    const handleLeaveMeeting = async () => {
+        try {
+            const data = await leaveMeeting(meetingId);
+            socket.emit("leave-room",{meetingId,userName:user.fullName});
+            
+            navigate('/home');
+        } catch (error) {
+            console.log(error?.response?.data?.message)
+        }   
     }
 
     return (
@@ -261,7 +277,7 @@ const MeetingRoom = () => {
                                     <span className='text-[11px] uppercase tracking-[0.24em]'>Chat</span>
                                 </button>
 
-                                <button className='flex flex-col items-center gap-2 rounded-2xl px-4 py-2 text-white/70 transition hover:bg-white/6 hover:text-white'>
+                                <button className='relative flex flex-col items-center gap-2 rounded-2xl px-4 py-2 text-white/70 transition hover:bg-white/6 hover:text-white'>
                                     <span className='flex h-11 w-11 items-center justify-center rounded-2xl bg-black/20 text-lg text-white/65'>
                                         <FiUsers />
                                         <span className='absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#6b63ff] text-[10px] font-semibold text-white'>
@@ -295,9 +311,9 @@ const MeetingRoom = () => {
                                 <FiChevronUp className='text-white/45' />
                             </div>
 
-                            <div className='space-y-4 px-4 py-4'>
+                            <div className='space-y-4 px-4 py-4 overflow-y-scroll scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent h-80'>
                                 {roomParticipants.map((participant) => (
-                                    <div key={participant.id} className='flex items-center justify-between gap-3'>
+                                    <div key={participant.id} className='flex items-center justify-between gap-3 '>
                                         <div className='flex items-center gap-3'>
                                             <div
                                                 className='flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white'
@@ -366,6 +382,13 @@ const MeetingRoom = () => {
                         </div>
                     </aside>
                 </div>
+            </div>
+            <div>
+                {message && (
+                    <div className='fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-[#6b63ff] text-white px-4 py-2 rounded-lg shadow-lg'>
+                        {message}
+                    </div>
+                )}
             </div>
         </div>
     )

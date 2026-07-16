@@ -20,3 +20,9 @@ export const endMeeting = async (meetingId) => {
     const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/meeting/${meetingId}/end`,{},{withCredentials:true});
     return response.data;
 }
+
+
+export const leaveMeeting = async (meetingId) => {
+    const response = await axios.patch(`${import.meta.env.VITE_BASE_URL}/meeting/${meetingId}/leave`,{},{withCredentials:true});
+    return response.data;
+}
